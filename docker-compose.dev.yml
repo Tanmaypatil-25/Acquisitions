@@ -7,7 +7,7 @@ services:
     container_name: acquisitions-app-dev
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      - '${PORT:-3000}:3000'
     env_file:
       - .env.development
     volumes:
@@ -26,7 +26,7 @@ services:
     restart: unless-stopped
     ports:
       # Exposes local postgres proxy on host 5432 (for host tools like drizzle studio, psql, etc.)
-      - "5432:5432"
+      - '5432:5432'
     env_file:
       - .env.development
     networks:
@@ -35,4 +35,3 @@ services:
 networks:
   acquisitions-network:
     driver: bridge
-

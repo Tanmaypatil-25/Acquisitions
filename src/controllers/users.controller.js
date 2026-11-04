@@ -5,7 +5,10 @@ import {
   updateUser as modifyUser,
   deleteUser as removeUser,
 } from '#services/users.service.js';
-import { userIdSchema, updateUserSchema } from '#validations/users.validation.js';
+import {
+  userIdSchema,
+  updateUserSchema,
+} from '#validations/users.validation.js';
 import { formatValidationError } from '#utils/format.js';
 import { jwttoken } from '#utils/jwt.js';
 import { cookies } from '#utils/cookies.js';
@@ -79,7 +82,10 @@ export const updateUser = async (req, res, next) => {
     // Resolve authenticated user from req.user (or fallback to token check)
     let currentUser = req.user;
     if (!currentUser) {
-      const token = cookies.get(req, 'token') || (req.headers.authorization?.startsWith('Bearer ') && req.headers.authorization.split(' ')[1]);
+      const token =
+        cookies.get(req, 'token') ||
+        (req.headers.authorization?.startsWith('Bearer ') &&
+          req.headers.authorization.split(' ')[1]);
       if (token) {
         try {
           currentUser = jwttoken.verify(token);
@@ -91,14 +97,23 @@ export const updateUser = async (req, res, next) => {
     }
 
     if (!currentUser) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'Authentication required' });
+      return res
+        .status(401)
+        .json({ error: 'Unauthorized', message: 'Authentication required' });
     }
 
     // Role-based authorization:
     // Only "admin" users can change the "role" of any user
     if (updates.role && currentUser.role !== 'admin') {
-      logger.warn(`User ${currentUser.id} attempted to change role without admin privileges`);
-      return res.status(403).json({ error: 'Forbidden', message: 'Only admin can change user roles' });
+      logger.warn(
+        `User ${currentUser.id} attempted to change role without admin privileges`
+      );
+      return res
+        .status(403)
+        .json({
+          error: 'Forbidden',
+          message: 'Only admin can change user roles',
+        });
     }
 
     // Authenticated users can change only their own information (unless they are admin)
@@ -106,8 +121,15 @@ export const updateUser = async (req, res, next) => {
     const isAdmin = currentUser.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      logger.warn(`User ${currentUser.id} attempted to update user ${id} without permission`);
-      return res.status(403).json({ error: 'Forbidden', message: 'You can only update your own profile' });
+      logger.warn(
+        `User ${currentUser.id} attempted to update user ${id} without permission`
+      );
+      return res
+        .status(403)
+        .json({
+          error: 'Forbidden',
+          message: 'You can only update your own profile',
+        });
     }
 
     logger.info(`Updating user ${id}...`);
@@ -124,7 +146,11 @@ export const updateUser = async (req, res, next) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (error.code === '23505' || error.message?.includes('duplicate key') || error.message?.includes('unique')) {
+    if (
+      error.code === '23505' ||
+      error.message?.includes('duplicate key') ||
+      error.message?.includes('unique')
+    ) {
       return res.status(409).json({ error: 'Email already exists' });
     }
 
@@ -147,7 +173,10 @@ export const deleteUser = async (req, res, next) => {
     // Resolve authenticated user from req.user (or fallback to token)
     let currentUser = req.user;
     if (!currentUser) {
-      const token = cookies.get(req, 'token') || (req.headers.authorization?.startsWith('Bearer ') && req.headers.authorization.split(' ')[1]);
+      const token =
+        cookies.get(req, 'token') ||
+        (req.headers.authorization?.startsWith('Bearer ') &&
+          req.headers.authorization.split(' ')[1]);
       if (token) {
         try {
           currentUser = jwttoken.verify(token);
@@ -159,7 +188,9 @@ export const deleteUser = async (req, res, next) => {
     }
 
     if (!currentUser) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'Authentication required' });
+      return res
+        .status(401)
+        .json({ error: 'Unauthorized', message: 'Authentication required' });
     }
 
     // Only self or admin can delete
@@ -167,8 +198,15 @@ export const deleteUser = async (req, res, next) => {
     const isAdmin = currentUser.role === 'admin';
 
     if (!isOwner && !isAdmin) {
-      logger.warn(`User ${currentUser.id} attempted to delete user ${id} without permission`);
-      return res.status(403).json({ error: 'Forbidden', message: 'You can only delete your own account' });
+      logger.warn(
+        `User ${currentUser.id} attempted to delete user ${id} without permission`
+      );
+      return res
+        .status(403)
+        .json({
+          error: 'Forbidden',
+          message: 'You can only delete your own account',
+        });
     }
 
     logger.info(`Deleting user ${id}...`);

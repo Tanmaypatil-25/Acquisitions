@@ -14,7 +14,9 @@ export const authenticateToken = (req, res, next) => {
     }
 
     if (!token) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'Authentication required' });
+      return res
+        .status(401)
+        .json({ error: 'Unauthorized', message: 'Authentication required' });
     }
 
     const decoded = jwttoken.verify(token);
@@ -22,7 +24,9 @@ export const authenticateToken = (req, res, next) => {
     next();
   } catch (error) {
     logger.warn('Token verification failed:', error.message);
-    return res.status(401).json({ error: 'Unauthorized', message: 'Invalid or expired token' });
+    return res
+      .status(401)
+      .json({ error: 'Unauthorized', message: 'Invalid or expired token' });
   }
 };
 
@@ -31,7 +35,9 @@ export const requireRole = (roles = []) => {
 
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized', message: 'Authentication required' });
+      return res
+        .status(401)
+        .json({ error: 'Unauthorized', message: 'Authentication required' });
     }
 
     if (!allowedRoles.includes(req.user.role)) {

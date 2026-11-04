@@ -5,17 +5,14 @@ const aj = arcjet({
   rules: [
     shield({ mode: 'LIVE' }),
     detectBot({
-      mode: 'LIVE', 
-      allow: [
-        'CATEGORY:SEARCH_ENGINE', 
-        'CATEGORY:PREVIEW',
-      ],
+      mode: 'LIVE',
+      allow: ['CATEGORY:SEARCH_ENGINE', 'CATEGORY:PREVIEW'],
     }),
     slidingWindow({
       mode: 'LIVE',
       interval: '2s',
-      max: 5
-    })
+      max: 5,
+    }),
   ],
 });
 

@@ -17,6 +17,11 @@ yarn-error.log*
 # Neon local cache / state
 .neon_local/
 
+# Test coverage
+coverage/
+*.lcov
+
+
 # OS / Editor clutter
 .DS_Store
 Thumbs.db

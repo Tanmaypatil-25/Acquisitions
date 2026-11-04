@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '#config/database.js';
 import { users } from '#models/user.model.js';
 
-export const hashPassword = async (password) => {
+export const hashPassword = async password => {
   try {
     return await bcrypt.hash(password, 10);
   } catch (error) {
@@ -25,13 +25,13 @@ export const comparePassword = async (password, hashedPassword) => {
 export const authenticateUser = async (emailOrPayload, maybePassword) => {
   try {
     const email =
-            typeof emailOrPayload === 'object' && emailOrPayload !== null
-              ? emailOrPayload.email
-              : emailOrPayload;
+      typeof emailOrPayload === 'object' && emailOrPayload !== null
+        ? emailOrPayload.email
+        : emailOrPayload;
     const password =
-            typeof emailOrPayload === 'object' && emailOrPayload !== null
-              ? emailOrPayload.password
-              : maybePassword;
+      typeof emailOrPayload === 'object' && emailOrPayload !== null
+        ? emailOrPayload.password
+        : maybePassword;
 
     const [user] = await db
       .select()
@@ -68,18 +68,21 @@ export const createUser = async ({ name, email, password, role = 'user' }) => {
 
     const password_hash = await hashPassword(password);
 
-    const [newUser] = await db.insert(users).values({ 
-      name, 
-      email, 
-      password: password_hash, 
-      role 
-    }).returning({ 
-      id: users.id, 
-      name: users.name, 
-      email: users.email, 
-      role: users.role, 
-      created_at: users.created_at 
-    });
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        name,
+        email,
+        password: password_hash,
+        role,
+      })
+      .returning({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        created_at: users.created_at,
+      });
 
     logger.info(`User ${newUser.email} created Successfully`);
     return newUser;

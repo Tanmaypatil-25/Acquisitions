@@ -7,7 +7,7 @@ services:
     container_name: acquisitions-app-prod
     restart: always
     ports:
-      - "${PORT:-3000}:3000"
+      - '${PORT:-3000}:3000'
     env_file:
       - .env.production
     networks:
@@ -16,4 +16,3 @@ services:
 networks:
   acquisitions-prod-network:
     driver: bridge
-
