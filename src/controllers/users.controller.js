@@ -108,12 +108,10 @@ export const updateUser = async (req, res, next) => {
       logger.warn(
         `User ${currentUser.id} attempted to change role without admin privileges`
       );
-      return res
-        .status(403)
-        .json({
-          error: 'Forbidden',
-          message: 'Only admin can change user roles',
-        });
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Only admin can change user roles',
+      });
     }
 
     // Authenticated users can change only their own information (unless they are admin)
@@ -124,12 +122,10 @@ export const updateUser = async (req, res, next) => {
       logger.warn(
         `User ${currentUser.id} attempted to update user ${id} without permission`
       );
-      return res
-        .status(403)
-        .json({
-          error: 'Forbidden',
-          message: 'You can only update your own profile',
-        });
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only update your own profile',
+      });
     }
 
     logger.info(`Updating user ${id}...`);
@@ -201,12 +197,10 @@ export const deleteUser = async (req, res, next) => {
       logger.warn(
         `User ${currentUser.id} attempted to delete user ${id} without permission`
       );
-      return res
-        .status(403)
-        .json({
-          error: 'Forbidden',
-          message: 'You can only delete your own account',
-        });
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'You can only delete your own account',
+      });
     }
 
     logger.info(`Deleting user ${id}...`);

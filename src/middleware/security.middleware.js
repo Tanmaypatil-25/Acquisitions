@@ -40,12 +40,10 @@ const securityMiddleware = async (req, res, next) => {
         userAgent: req.get('User-Agent'),
         path: req.path,
       });
-      return res
-        .status(403)
-        .json({
-          error: 'Forbidden',
-          message: 'Automated request are not allowed',
-        });
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Automated request are not allowed',
+      });
     }
 
     if (decision.isDenied() && decision.reason.isShield()) {
@@ -55,12 +53,10 @@ const securityMiddleware = async (req, res, next) => {
         path: req.path,
         method: req.method,
       });
-      return res
-        .status(403)
-        .json({
-          error: 'Forbidden',
-          message: 'Request blocked by security policy',
-        });
+      return res.status(403).json({
+        error: 'Forbidden',
+        message: 'Request blocked by security policy',
+      });
     }
 
     if (decision.isDenied() && decision.reason.isRateLimit()) {
@@ -71,18 +67,16 @@ const securityMiddleware = async (req, res, next) => {
       });
       return res
         .status(403)
-        .json({ error: 'Forbidden', message: 'Too many requests' });
+        .json({ error: 'Forbidden', message: message || 'Too many requests' });
     }
 
     next();
   } catch (error) {
     console.error('Arcjet middleware error: ', error);
-    res
-      .status(500)
-      .json({
-        error: 'Internal server error',
-        message: 'Something went wrong with security middleware',
-      });
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Something went wrong with security middleware',
+    });
   }
 };
 

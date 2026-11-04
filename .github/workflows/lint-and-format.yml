@@ -45,4 +45,3 @@ jobs:
         if: failure() && steps.prettier.outcome == 'failure'
         run: |
           echo "::error title=Prettier Check Failed::Code formatting check failed. Fix code formatting locally by running: npm run format"
-
