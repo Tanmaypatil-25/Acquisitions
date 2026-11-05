@@ -1,125 +1,134 @@
-# Acquisitions Application & Docker Guide
+# Acquisitions API
 
-This repository contains the backend service for Acquisitions, built with Node.js, Express, Drizzle ORM, Arcjet, and Neon Serverless Postgres.
-
----
-
-## 🏗 Architecture & Database Strategy
-
-| Environment             | Database Target          | Proxy / Container                             | Driver Behavior                                                                                       |
-| :---------------------- | :----------------------- | :-------------------------------------------- | :---------------------------------------------------------------------------------------------------- |
-| **Development (`dev`)** | Ephemeral Neon Branch    | Containerized `neondatabase/neon_local` proxy | Routes queries to `http://neon-local:5432/sql` and creates/cleans up an isolated branch automatically |
-| **Production (`prod`)** | Persistent Neon Cloud DB | Direct connection (no proxy)                  | Standard Neon serverless HTTP connection via `DATABASE_URL` (`ep-*.neon.tech`)                        |
+Acquisitions is a production-grade, secure RESTful backend service built with Node.js, Express, Drizzle ORM, Arcjet security, and Neon Serverless PostgreSQL. It features full JWT-based authentication, role-based access control (RBAC), multi-layer bot & DDoS protection, dual-environment database branching (via Neon Local), and automated multi-architecture CI/CD pipelines.
 
 ---
 
-## 🚀 1. Local Development with Neon Local (Docker Compose)
+## ⚡ Core Features
 
-[Neon Local](https://neon.com/docs/local/neon-local) runs a local proxy container (`neondatabase/neon_local`) that communicates with your Neon project. Every time you start the compose stack, it generates an isolated, ephemeral branch and deletes it when the container terminates.
+- **Authentication & RBAC:** Secure sign-up, sign-in, and sign-out with HTTP-only cookies, password hashing (bcrypt), JWT verification, and role-based permissions (`admin` vs `user`).
+- **User CRUD & Self-Ownership:** Validated endpoints (Zod) allowing users to retrieve and edit their own profiles while restricting role modifications and account deletions to administrators.
+- **Arcjet Security Suite:** Adaptive rate limiting via sliding windows, automated bot protection, and attack shielding.
+- **Database Architecture:** Neon Serverless PostgreSQL with Drizzle ORM, supporting ephemeral local database branching for rapid development and direct pooled cloud connections in production.
+- **Testing & Quality:** Jest test suite with native ESM support (`--experimental-vm-modules`), Supertest, ESLint, and Prettier formatting.
+- **Docker & CI/CD:** Multi-stage `Dockerfile`, Docker Compose for local/prod runs, and GitHub Actions workflows for continuous integration, testing with coverage artifacts, and multi-arch Docker image publication (`linux/amd64`, `linux/arm64`).
 
-### Step 1: Prepare Environment Variables
+---
 
-Copy `.env.development` or configure your local variables:
+## 📁 Project Structure
 
-```bash
-cp .env.development .env
+```text
+Acquisitions/
+├── .github/workflows/         # CI/CD pipelines (lint/format, tests, docker push)
+├── drizzle/                   # Database schema migrations
+├── scripts/                   # Helper scripts for dev/prod docker orchestration
+├── src/
+│   ├── config/                # Arcjet, database (Neon), and Winston logger configs
+│   ├── controllers/           # Route controller handlers (auth, users)
+│   ├── middleware/            # Security (Arcjet) and authentication/RBAC middleware
+│   ├── models/                # Drizzle ORM database schemas
+│   ├── routes/                # Express API routes
+│   ├── services/              # Core business and data access logic
+│   ├── utils/                 # Cookies, JWT helpers, and error formatting
+│   ├── validations/           # Zod request validation schemas
+│   ├── app.js                 # Express application configuration
+│   └── server.js              # HTTP server entrypoint
+├── tests/                     # Unit and integration test suites
+├── docker-compose.dev.yml     # Local dev compose stack (App + Neon Local proxy)
+├── docker-compose.prod.yml    # Production compose stack (Cloud Neon connection)
+└── Dockerfile                 # Multi-stage production and development Dockerfile
 ```
 
-Ensure you set your Neon API Key and Project ID (found in the [Neon Console](https://console.neon.tech)):
+---
 
-```env
-NEON_API_KEY=your_neon_api_key
-NEON_PROJECT_ID=your_neon_project_id
-# Optional: source branch to branch off of (defaults to project main branch)
-PARENT_BRANCH_ID=
-DELETE_BRANCH=true
-```
+## 🚀 Quick Start
 
-### Step 2: Start Development Containers
+### 1. Prerequisites
 
-Run both the application and Neon Local via `docker-compose.dev.yml`:
+- **Node.js** v20+ or v22+
+- **Docker & Docker Compose** (for containerized runs)
+- A **Neon PostgreSQL** account ([console.neon.tech](https://console.neon.tech))
+
+### 2. Environment Setup
+
+Create your local environment file:
 
 ```bash
+cp .env.example .env
+```
+
+Populate required variables (`PORT`, `DATABASE_URL`, `JWT_SECRET`, `ARCJET_KEY`, etc.). Template references are provided in `.env.development.example` and `.env.production.example`.
+
+### 3. Local Development (Native)
+
+```bash
+# Install dependencies
+npm ci
+
+# Run database migrations
+npm run db:migrate
+
+# Start development server with live reload
+npm run dev
+```
+
+### 4. Local Development (Docker with Neon Local)
+
+Neon Local spins up a local proxy that automatically provisions an isolated, ephemeral database branch on startup and destroys it upon shutdown:
+
+```bash
+# Start app + Neon Local proxy
 docker compose -f docker-compose.dev.yml --env-file .env.development up --build
-```
 
-- **App container:** Accessible at `http://localhost:3000` with hot-reloading (`node --watch`) and source volume binding.
-- **Neon Local proxy:** Running on `neon-local:5432` inside Docker network and forwarded to `localhost:5432` on your host machine.
-- **Drizzle / Local tools:** If you run migrations or Drizzle Studio on your host machine, connect to `postgres://neon:npg@localhost:5432/neondb?sslmode=no-verify`.
-
-### Step 3: Stopping the Development Stack
-
-To shut down and automatically delete the ephemeral branch:
-
-```bash
+# Stop stack and clean up ephemeral branch
 docker compose -f docker-compose.dev.yml down
 ```
 
 ---
 
-## 🚢 2. Production Deployment (Neon Cloud)
+## 📡 API Reference
 
-In production, no Neon Local proxy is deployed. The container directly queries your Neon serverless cloud endpoint via the pooled connection string.
+| Method   | Endpoint             | Access / Role | Description                                           |
+| :------- | :------------------- | :------------ | :---------------------------------------------------- |
+| `GET`    | `/health`            | Public        | System status, timestamp, and server uptime           |
+| `GET`    | `/api`               | Public        | API service health verification                       |
+| `POST`   | `/api/auth/sign-up`  | Public        | Register new user account                             |
+| `POST`   | `/api/auth/sign-in`  | Public        | Sign in and receive HTTP-only JWT cookie              |
+| `POST`   | `/api/auth/sign-out` | Public        | Invalidate auth cookie                                |
+| `GET`    | `/api/users`         | Admin         | Retrieve a list of all registered users               |
+| `GET`    | `/api/users/:id`     | Authenticated | Retrieve specific user profile                        |
+| `PUT`    | `/api/users/:id`     | Owner / Admin | Update user details (role modification is admin-only) |
+| `DELETE` | `/api/users/:id`     | Admin         | Delete user record from the database                  |
 
-### Step 1: Configure Production Environment
+---
 
-Create or provide your `.env.production`:
+## 🧪 Testing & Code Quality
 
-```env
-PORT=3000
-NODE_ENV=production
-LOG_LEVEL=info
-DATABASE_URL=postgres://user:password@ep-sample-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require
-ARCJET_KEY=your_arcjet_production_key
+```bash
+# Run unit and integration tests with coverage
+npm test
+
+# Check linting and formatting
+npm run lint
+npm run format:check
+
+# Automatically fix linting and formatting issues
+npm run lint:fix
+npm run format
 ```
 
-### Step 2: Build and Run Production Container
+---
 
-Deploy using `docker-compose.prod.yml`:
+## 🚢 Production Deployment
+
+### Docker Compose Production
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 ```
 
-Or build and deploy the standalone Docker image with your container orchestrator (e.g. AWS ECS, Google Cloud Run, Kubernetes):
+### CI/CD Pipelines (GitHub Actions)
 
-```bash
-# Build production target image
-docker build --target production -t acquisitions-api:prod .
-
-# Run with environment injection
-docker run -d \
-  --name acquisitions-api \
-  -p 3000:3000 \
-  -e NODE_ENV=production \
-  -e DATABASE_URL="postgres://user:password@ep-sample-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require" \
-  -e ARCJET_KEY="your_arcjet_key" \
-  acquisitions-api:prod
-```
-
----
-
-## 🔀 How `DATABASE_URL` and Drivers Switch Between Environments
-
-The database client in `src/config/database.js` inspects `NEON_FETCH_ENDPOINT`:
-
-- **Development (`docker-compose.dev.yml`):**
-  - `DATABASE_URL=postgres://neon:npg@neon-local:5432/neondb?sslmode=no-verify`
-  - `NEON_FETCH_ENDPOINT=http://neon-local:5432/sql`
-  - The Neon serverless driver redirects HTTP fetch queries to the local `neon-local` proxy container.
-- **Production (`docker-compose.prod.yml`):**
-  - `DATABASE_URL=postgres://...@ep-sample-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require`
-  - `NEON_FETCH_ENDPOINT` is omitted.
-  - The driver connects natively to Neon Cloud over HTTPS.
-
----
-
-## 🛠 Useful Commands
-
-| Task             | Command                                                                      |
-| :--------------- | :--------------------------------------------------------------------------- |
-| Start Dev Stack  | `docker compose -f docker-compose.dev.yml --env-file .env.development up`    |
-| Stop Dev Stack   | `docker compose -f docker-compose.dev.yml down`                              |
-| View Dev Logs    | `docker compose -f docker-compose.dev.yml logs -f app`                       |
-| Start Prod Stack | `docker compose -f docker-compose.prod.yml --env-file .env.production up -d` |
-| Stop Prod Stack  | `docker compose -f docker-compose.prod.yml down`                             |
+- **Lint & Format (`lint-and-format.yml`):** Runs ESLint and Prettier checks on push/PR to `main` and `staging`.
+- **Automated Tests (`tests.yml`):** Executes test suites, attaches step summaries, and archives coverage reports as artifacts (30 days retention).
+- **Docker Build & Push (`docker-build-and-push.yml`):** Builds multi-arch images (`linux/amd64`, `linux/arm64`) using Docker Buildx and publishes tagged versions to Docker Hub on release.
